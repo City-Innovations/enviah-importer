@@ -60,21 +60,21 @@ def preprocess_data(data, engine, table_name):
     db_columns = [column['name'] for column in inspector.get_columns(table_name)]
 
     # Remove columns that don't exist in the database table
-    data = data[[col for col in data.columns if col in db_columns]]
+    data = data[[col for col in data.columns if col in db_columns]].copy()
 
     # Existing preprocessing steps
     if 'profit_margin' in data.columns:
-        data['profit_margin'] = data['profit_margin'].apply(clean_profit_margin)
+        data.loc[:, 'profit_margin'] = data['profit_margin'].apply(clean_profit_margin)
 
     if 'room' in data.columns:
-        data['room'] = list(zip(['service line'] * len(data), data['room']))
+        data.loc[:, 'room'] = list(zip(['service line'] * len(data), data['room']))
 
     if 'id' in data.columns:
-        data['id'] = data['id'].apply(int)
+        data.loc[:, 'id'] = data['id'].apply(int)
         data.drop('id', axis=1, inplace=True)
 
     if 'fin_years' in data.columns:
-        data['fin_years'] = data['fin_years'].apply(lambda x: json.dumps([x]) if pd.notnull(x) else '[]')
+        data.loc[:, 'fin_years'] = data['fin_years'].apply(lambda x: json.dumps([x]) if pd.notnull(x) else '[]')
 
     return data
 
@@ -88,7 +88,15 @@ def read_config():
     config = configparser.ConfigParser()
     if not config.read('config.ini'):
         raise FileNotFoundError("Error: Could not read 'config.ini' file.")
-    return config
+    
+    # Use raw string for db_url
+    db_url = config.get('database', 'db_url', raw=True)
+    
+    # Create a new config with just the raw db_url
+    new_config = configparser.ConfigParser()
+    new_config['database'] = {'db_url': db_url}
+    
+    return new_config
 
 def create_database_engine(config):
     try:

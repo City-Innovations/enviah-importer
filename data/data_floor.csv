@@ -1,2 +1,2 @@
 id,system_id,campus_id,building_id,service_line_id,floor,floor_sort,floor_designation,data_year,current_or_future,outpatient_sf,inpatient_sf,office_sf,support_services_sf,other_sf,vacant_sf,total_sf,circulation_sf
-1,1,1,1,1,2,2,Clinical Services,2024,Current,1000,1000,1000,1000,1000,500,6000,500
+1,1,1,4,1,2,2,Clinical Services,2024,Current,1000,1000,1000,1000,1000,500,6000,500
