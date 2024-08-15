@@ -1,0 +1,2 @@
+id,service_line_id,system_id,campus_id,building_id,project_name,time_frame,department_name,description,sf,type,level_of_construction,FF_E,number_of_years,start_year,start_fy_year,revenue_generating,dependent,project_dependent_on,fin_years
+1,1,1,1,1,MOB,Short Term,Hospital,this is a description,50000,Clinical,R1,200000,10,2024,2024,H,Yes,something,10

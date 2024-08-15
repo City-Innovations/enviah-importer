@@ -1,0 +1,2 @@
+id,system_id,campus_id,address,name,type_of_building,additional_building_investments_needed,engineering_score,roofing_facade,electrical,plumbing,annual_building_costs,annual_rent,lease_or_owned
+1,1,1,"129 Jefferson Avenue SE, Grand Rapids, MI 49503",Trinity Health ,Inpatient,100000,57,2,2,2,1000000,20000,Lease

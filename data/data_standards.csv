@@ -1,0 +1,2 @@
+id,campus_id,system_id,service_type,data_type,num_beds,std_sf_revenue_generating_room,ip_target_occupancy,op_efficiency,mins_per_year,rehab_max_visits_room,rehab_std_mins_provider,rehab_std_sf_room
+1,1,1,Outpatient,Clinic,200,650,0.8,0.75,500,2.21,1677,0.15

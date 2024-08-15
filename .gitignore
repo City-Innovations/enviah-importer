@@ -1,0 +1,5 @@
+myenv/*
+config.ini
+venv/*
+.vscode/*
+__pycache__/*
