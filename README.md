@@ -42,12 +42,6 @@ deactivate
 
 ## Usage
 
-To use the script, follow these steps:
-
-1. Open a terminal or command prompt.
-2. Navigate to the directory where the script is located.
-3. Run the following command:
-
 ```
 python import.py <file_path> <table_name>
 ```
@@ -62,9 +56,7 @@ python import.py data.csv service_line
 
 ## Configuration
 
-The script reads its configuration from a file named `config.ini`. This file should be located in the same directory as the script. The configuration file contains the following settings:
-
-- `db_url`: The URL of the PostgreSQL database you want to connect to. This URL should include the database name, username, password, and other necessary information.
+Rename `example.config.ini` to `config.ini`. Replace `PASSWORD` with the database password.
 
 ## Example
 
