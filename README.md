@@ -91,3 +91,13 @@ The Enviah Data Importer is a powerful tool that can be used to import data from
 - [ ] Service Line
 - [X] Standards
 - [X] System
+
+## Table Import Order 
+- system
+- campus
+- building
+- standards
+- floor
+- service line
+- financial
+- project costs
