@@ -101,3 +101,21 @@ The Enviah Data Importer is a powerful tool that can be used to import data from
 - service line
 - financial
 - project costs
+
+## To Do
+- [ ] Echo the number of newly inserted IDs to the console
+
+
+## What I did
+### Floor
+- Updated system_id, campus_id, building_id
+- Removed service_line_id as it is no longer needed
+
+### Service Line
+- Updated system_id, campus_id, building_id
+- Added building_id's
+- deleted id column
+- zeroed out two records that had NaN values in the data
+  - ip_annual_discharges_year_2
+  - ip_annual_discharges_year_1
+- ip_percent_occupancy & profit_margin - removed percentage sign
