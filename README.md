@@ -148,16 +148,16 @@ The Enviah Data Importer is a powerful tool that can be used to import data from
     - cd_number_of_pt_a_provider_sees_at_once
 
 ### Columns needed by Arya
-- [ ] standard_sf_per_room
-- [ ] maximum_visits_per_room
-- [ ] target_capacity
-- [ ] standard_minutes_for_each_staff
-- [ ] visit_minutes_per_staff - assume that this is working
+- [X] standard_sf_per_room
+- [X] maximum_visits_per_room
+- [X] target_capacity
+- [X] standard_minutes_for_each_staff
+- [X] visit_minutes_per_staff - assume that this is working
 - [X] type_of_service
-- [ ] target_minutes
+- [X] target_minutes
 - [X] space_name
 - [X] minutes_available_label
-- [ ] minutes_available
+- [X] minutes_available
 - [X] floor - floor_id
 - [X] op_visits_annually
 - [ ] capacity_available_label
@@ -165,16 +165,15 @@ The Enviah Data Importer is a powerful tool that can be used to import data from
 - [X] ip_percent_occupancy
 - [X] op_number_of_falls_and_errors
 - [X] patient_satisfaction
-- [ ] maximum_sf_per_room
-- [ ] actual_sf_per_room
-- [ ] available_number_of_rooms
+- [X] maximum_sf_per_room
+- [X] actual_sf_per_room
+- [X] available_number_of_rooms
 - [ ] total_visit_capacity_given_rooms
-- [ ] visits_per_room
+- [X] visits_per_room
 - [X] op_number_of_patient_rooms
 - [X] ip_average_length_of_stay
-- [ ] percent_efficiency
+- [X] percent_efficiency
 - [ ] percent_capacity
-- [ ] percent_growth
+- [X] percent_growth
 - [X] sf
 - [ ] total_visits_available
-

@@ -22,11 +22,10 @@
 4. service_line_outpatient_treatment_standard_minutes_per_provider
 5. service_line_standard_minutes_for_each_staff
 6. service_line_growth
-7. service_line_growth_percent
+7. service_line_percent_growth
 8. service_line_target_minutes
-9. service_line_visit_minutes_per_staff
-10. service_line_minutes_available
-11. service_line_minutes_available_label
+9. service_line_minutes_available
+10. service_line_minutes_available_label
 ----
 
 1. service_line_actual_sf_per_room
@@ -38,6 +37,10 @@
 7. service_line_maximum_sf_per_room
 8. service_line_percent_efficiency
 9. service_line_available_number_of_rooms
+----
+
+1. financial_calculated_cost
+2. financial_capital_investment
 ----
 
 ## Trigger function updates 

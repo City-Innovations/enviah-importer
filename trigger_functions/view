@@ -1,0 +1,211 @@
+CREATE OR REPLACE VIEW service_line_combined_view AS
+WITH visits_cte AS (
+    SELECT
+        *,  -- Select all original columns
+
+        -- Calculate visits_per_room
+        CASE
+            WHEN type_of_service = 'Outpatient' OR type_of_service = 'Treatment' THEN
+                CASE 
+                    WHEN cd_number_of_patient_rooms IS NULL OR cd_number_of_patient_rooms = 0 THEN NULL
+                    ELSE cd_visits_annually / cd_number_of_patient_rooms
+                END
+            WHEN type_of_service = 'Inpatient' THEN
+                CASE 
+                    WHEN ip_number_of_licensed_beds IS NULL OR ip_number_of_licensed_beds = 0 THEN NULL
+                    ELSE ip_patient_days_year_1 / ip_number_of_licensed_beds
+                END
+            WHEN type_of_data = 'Rehab' THEN
+                CASE
+                    WHEN outpatient_sf IS NULL OR outpatient_sf = 0 THEN NULL
+                    ELSE cd_visits_annually / outpatient_sf
+                END
+            ELSE 0
+        END AS visits_per_room,
+
+        -- Calculate inpatient_maximum_visits_per_year
+        CASE 
+            WHEN type_of_service = 'Inpatient' THEN
+                CASE 
+                    WHEN ip_number_of_licensed_beds = 0 THEN NULL
+                    ELSE ip_maximum_patient_days / ip_number_of_licensed_beds
+                END
+            ELSE 0
+        END AS inpatient_maximum_visits_per_year,
+
+        -- Calculate visit_minutes_per_staff
+        CASE
+            WHEN type_of_service IN ('Outpatient', 'Treatment') THEN
+                CASE 
+                    WHEN cd_length_of_time_a_visit_takes IS NOT NULL 
+                         AND cd_turnover_between_patients IS NOT NULL 
+                         AND cd_visits_annually IS NOT NULL 
+                         AND cd_number_of_providers_or_patient_facing_staff IS NOT NULL 
+                         AND cd_number_of_pt_a_provider_sees_at_once IS NOT NULL THEN
+                        ((cd_length_of_time_a_visit_takes + cd_turnover_between_patients) * cd_visits_annually) 
+                        / cd_number_of_providers_or_patient_facing_staff 
+                        / cd_number_of_pt_a_provider_sees_at_once
+                    ELSE 0
+                END
+            ELSE 0
+        END AS visit_minutes_per_staff,
+
+        -- Calculate standard_minutes_for_each_staff
+        CASE 
+            WHEN cd_visits_annually IS NOT NULL AND cd_number_of_providers_or_patient_facing_staff IS NOT NULL THEN
+                cd_visits_annually / cd_number_of_providers_or_patient_facing_staff
+            ELSE 0
+        END AS standard_minutes_for_each_staff,
+
+        -- Calculate standard_sf_per_room
+        CASE
+            WHEN type_of_service = 'Outpatient' AND type_of_data = 'Rehab' THEN rehab_standard_sf_per_room
+            WHEN type_of_service IN ('Outpatient', 'Treatment') THEN outpatient_treatment_standard_sf_per_room
+            WHEN type_of_service = 'Inpatient' THEN ip_standard_sf_per_room
+            WHEN type_of_data IN ('Lab', 'Pharmacy') AND type_of_service = 'Inpatient' THEN lab_pharmacy_standard_sf_per_room
+            ELSE 0
+        END AS standard_sf_per_room,
+
+        -- Calculate actual_sf_per_room
+        CASE
+            WHEN (type_of_data = 'Lab' OR type_of_data = 'Pharmacy') AND type_of_service = 'Inpatient' THEN sf / ip_number_of_licensed_beds
+            WHEN type_of_service = 'Inpatient' THEN sf / ip_number_of_licensed_beds
+            WHEN type_of_data = 'Rehab' THEN cd_number_of_providers_or_patient_facing_staff / (sf / 100)
+            WHEN type_of_service = 'Outpatient' OR type_of_service = 'Treatment' THEN sf / cd_number_of_patient_rooms
+            ELSE 0
+        END AS actual_sf_per_room,
+
+        -- Maximum visits per room calculation
+        CASE 
+            WHEN type_of_data = 'Rehab' THEN
+                (SELECT COALESCE(s.rehab_max_visits_room, 0)
+                 FROM standards s
+                 WHERE s.system_id = system_id
+                   AND s.data_type = type_of_data
+                   AND s.service_type = type_of_service
+                 LIMIT 1)
+            WHEN type_of_service = 'Outpatient' OR type_of_service = 'Treatment' THEN
+                CASE 
+                    WHEN (cd_length_of_time_a_visit_takes + cd_turnover_between_patients) = 0 THEN NULL
+                    ELSE (cd_hours_of_operations_in_minutes * cd_days_open_per_week * 50) / 
+                         (cd_length_of_time_a_visit_takes + cd_turnover_between_patients)
+                END
+            ELSE 0
+        END AS maximum_visits_per_room
+
+    FROM
+        service_line
+),
+cte AS (
+    SELECT
+        *,  -- Select all columns from visits_cte
+
+        -- Calculate total_visits_available as its own column
+        (visits_cte.maximum_visits_per_room - visits_cte.visits_per_room) AS total_visits_available
+
+    FROM
+        visits_cte
+)
+SELECT
+    *,  -- Select all columns from the CTEsd
+
+    -- Calculate capacity of visits available
+    CASE 
+        WHEN type_of_service = 'Outpatient' OR type_of_service = 'Treatment' THEN
+            CASE 
+                WHEN type_of_data = 'Rehab' THEN
+                    (SELECT COALESCE(s.rehab_max_visits_room, 0)
+                     FROM standards s
+                     WHERE s.system_id = cte.system_id
+                       AND s.data_type = cte.type_of_data
+                       AND s.service_type = cte.type_of_service
+                     LIMIT 1)
+                WHEN (cd_length_of_time_a_visit_takes + cd_turnover_between_patients) = 0 THEN NULL
+                ELSE (cd_hours_of_operations_in_minutes * cd_days_open_per_week * 50) / 
+                     (cd_length_of_time_a_visit_takes + cd_turnover_between_patients)
+            END * cd_number_of_patient_rooms
+        ELSE inpatient_maximum_visits_per_year * ip_number_of_licensed_beds
+    END AS capacity_of_visits_available,
+
+    -- Calculate rehab standard minutes per provider using visit_minutes_per_staff
+    CASE
+        WHEN type_of_service = 'Rehab' THEN
+            CASE
+                WHEN cte.visit_minutes_per_staff IS NOT NULL AND cd_number_of_pt_a_provider_sees_at_once IS NOT NULL THEN
+                    cte.visit_minutes_per_staff * cd_number_of_pt_a_provider_sees_at_once
+                ELSE NULL
+            END
+        ELSE NULL
+    END AS rehab_std_mins_provider,
+
+    -- Maximum square footage per room using standard_sf_per_room
+    CASE
+        WHEN cte.standard_sf_per_room IS NOT NULL THEN
+            cte.standard_sf_per_room * 1.25
+        ELSE NULL
+    END AS maximum_sf_per_room,
+
+    -- Percent efficiency based on square footage
+    CASE
+        WHEN cte.standard_sf_per_room = 0 THEN 0
+        ELSE actual_sf_per_room / cte.standard_sf_per_room
+    END AS percent_efficiency,
+
+    -- Available number of rooms calculated using the standard square footage per room
+    CASE 
+        WHEN sf IS NOT NULL AND cte.standard_sf_per_room IS NOT NULL AND cte.standard_sf_per_room != 0 THEN sf / cte.standard_sf_per_room
+        ELSE NULL
+    END AS available_number_of_rooms,
+
+    -- Calculate growth using standard_minutes_for_each_staff
+    CASE 
+        WHEN COALESCE(cte.standard_minutes_for_each_staff, 0) = 0 OR COALESCE(cte.visit_minutes_per_staff, 0) = 0 THEN NULL
+        ELSE cte.standard_minutes_for_each_staff - cte.visit_minutes_per_staff
+    END AS growth,
+
+    -- Percent growth
+    CASE 
+        WHEN standard_minutes_for_each_staff = 0 THEN NULL
+        ELSE visit_minutes_per_staff / standard_minutes_for_each_staff
+    END AS percent_growth,
+
+    -- Target minutes
+    CASE
+        WHEN standard_minutes_for_each_staff IS NOT NULL THEN
+            standard_minutes_for_each_staff * 0.75  -- Fixed undefined 'standard_minutes' reference
+        ELSE NULL
+    END AS target_minutes,
+
+    -- Calculate minutes available
+    CASE 
+        WHEN (standard_minutes_for_each_staff * 0.75 - visit_minutes_per_staff) < 0 THEN 0
+        ELSE standard_minutes_for_each_staff * 0.75 - visit_minutes_per_staff
+    END AS minutes_available,
+
+    -- Label minutes available
+    CASE 
+        WHEN type_of_service = 'Inpatient' THEN ' '
+        WHEN type_of_service = 'Outpatient' THEN 'Minutes'
+        WHEN type_of_service = 'Treatment' THEN 'Minutes'
+        ELSE NULL
+    END AS minutes_available_label,
+
+    -- Calculate target_capacity based on type_of_service
+    CASE
+      WHEN type_of_service = 'Inpatient' THEN cte.maximum_visits_per_room * ip_target_occupancy
+	  ELSE cte.maximum_visits_per_room * 0.75
+	END AS target_capacity,
+
+    -- Logic for capacity_available_label
+    CASE
+        WHEN cte.total_visits_available IS NULL THEN NULL
+        ELSE
+            CASE 
+                WHEN type_of_service = 'Inpatient' THEN 'Patient Days'
+                WHEN type_of_service IN ('Outpatient', 'Treatment') THEN 'Visits'
+                ELSE NULL
+            END
+    END AS capacity_available_label
+
+FROM
+    cte;
